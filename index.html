@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BCS Erudite Ascent - Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;margin:0}
+  header{background:#1E3A8A;color:#fff;padding:12px 16px;font-weight:700}
+  .wrap{display:flex;gap:16px;padding:16px}
+  nav{width:220px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+  main{flex:1}
+  .card{background:#fff;padding:12px;border-radius:8px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.04)}
+  input,select,textarea{width:100%;padding:8px;margin-top:6px;border:1px solid #e2e8f0;border-radius:6px}
+  button{background:#059669;color:#fff;border:none;padding:10px 12px;border-radius:6px;cursor:pointer}
+</style>
+</head>
+<body>
+<header>BCS Erudite Ascent — Demo</header>
+<div class="wrap">
+  <nav>
+    <div class="card">
+      <strong>Quick Links</strong>
+      <div style="margin-top:8px">
+        <a href="#plan">Study Plan</a><br>
+        <a href="#progress">Progress</a><br>
+        <a href="#books">Books</a><br>
+        <a href="#circulars">Circulars</a>
+      </div>
+    </div>
+    <div class="card">
+      <strong>Today</strong>
+      <div id="todayTasks">Read Bangla essay; 10 Botany MCQs; Current affairs</div>
+    </div>
+  </nav>
+
+  <main>
+    <section id="plan" class="card">
+      <h3>24-Week Study Plan (sample)</h3>
+      <textarea id="planText" rows="6">Week1: Foundation I - Bangla, English, Botany basics...</textarea>
+      <div style="margin-top:8px"><button onclick="savePlan()">Save Plan</button></div>
+      <div id="planMsg"></div>
+    </section>
+
+    <section id="progress" class="card">
+      <h3>Daily Progress</h3>
+      <input id="subject" placeholder="Subject (e.g., Botany)">
+      <select id="qtype"><option>MCQ</option><option>Long</option></select>
+      <input id="solved" type="number" placeholder="Questions solved">
+      <input id="memorized" type="number" placeholder="Memorized">
+      <input id="clarity" type="number" placeholder="Concept clarity (0-100)">
+      <div style="margin-top:8px"><button onclick="addEntry()">Add Entry</button></div>
+      <canvas id="chart" height="100" style="margin-top:12px"></canvas>
+      <div id="entries"></div>
+    </section>
+
+    <section id="books" class="card">
+      <h3>Books (sample)</h3>
+      <div id="booksList"></div>
+    </section>
+
+    <section id="circulars" class="card">
+      <h3>Circulars</h3>
+      <div id="cList"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+  // simple localStorage-based app
+  const entries = JSON.parse(localStorage.getItem('ea_entries')||'[]');
+  const books = JSON.parse(localStorage.getItem('ea_books')||JSON.stringify([
+    {subject:'Bangla',title:'MP3 Bangla',status:'Not Studied'},
+    {subject:'Botany',title:'Taiz & Zeiger',status:'Not Studied'}
+  ]));
+  const circulars = JSON.parse(localStorage.getItem('ea_circ')||JSON.stringify([
+    {name:'46th BCS Preli',publish:'2025-10-12',deadline:'2025-11-30',status:'Unread'}
+  ]));
+  function savePlan(){ localStorage.setItem('ea_plan',document.getElementById('planText').value); document.getElementById('planMsg').innerText='Saved locally'; }
+  function render(){ 
+    document.getElementById('entries').innerHTML = entries.map(e=>`<div>${e.date} | ${e.subject} (${e.qtype}) - solved:${e.solved} mem:${e.memorized} clarity:${e.clarity}</div>`).join('');
+    document.getElementById('booksList').innerHTML = books.map(b=>`<div>${b.subject} - ${b.title} [${b.status}]</div>`).join('');
+    document.getElementById('cList').innerHTML = circulars.map(c=>`<div>${c.name} - ${c.publish} - ${c.deadline} [${c.status}]</div>`).join('');
+    updateChart();
+  }
+  function addEntry(){
+    const e = {date: new Date().toISOString().slice(0,10), subject:document.getElementById('subject').value||'General', qtype:document.getElementById('qtype').value, solved:parseInt(document.getElementById('solved').value)||0, memorized:parseInt(document.getElementById('memorized').value)||0, clarity:parseInt(document.getElementById('clarity').value)||0};
+    entries.push(e); localStorage.setItem('ea_entries', JSON.stringify(entries)); render();
+  }
+  // chart
+  const ctx = document.getElementById('chart').getContext('2d');
+  const chart = new Chart(ctx,{type:'bar',data:{labels:['Solved','Memorized','Clarity'],datasets:[{label:'Totals',data:[0,0,0],backgroundColor:['#1E3A8A','#059669','#F59E0B']}]},options:{scales:{y:{beginAtZero:true}}}});
+  function updateChart(){ const totals = entries.reduce((a,e)=>{a[0]+=e.solved;a[1]+=e.memorized;a[2]+=e.clarity;return a},[0,0,0]); chart.data.datasets[0].data = totals; chart.update(); }
+  render();
+</script>
+</body>
+</html>
